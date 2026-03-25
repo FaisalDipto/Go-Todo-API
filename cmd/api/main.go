@@ -40,8 +40,9 @@ func main() {
 	mux.HandleFunc("/todos", h.HandleTodos)
 	mux.HandleFunc("/todos/", h.HandleTodosById)
 
-	loggedMux := middleware.Logging(logger)(mux)
+	handler := middleware.Logging(logger)(mux)
+	handler = middleware.Recovery(logger)(handler)
 
 	fmt.Printf("API running on :%v...\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, loggedMux))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
