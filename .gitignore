@@ -1,0 +1,14 @@
+# 1. Secret files (NEVER PUSH THESE)
+.env
+*.env
+
+# 2. Go Binaries (Don't push compiled files)
+*.exe
+*.exe~
+todo-api
+server.exe
+final_api.exe
+
+# 3. OS specific files
+.DS_Store
+Thumbs.db
