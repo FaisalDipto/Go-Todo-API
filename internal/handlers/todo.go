@@ -58,7 +58,6 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request) {
 func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// ... (keep your existing GET logic here)
 		rows, err := h.Pool.Query(context.Background(), "SELECT id, title, status FROM todos")
 		if err != nil {
 		h.Logger.Printf("DATABASE ERROR: %v", err)

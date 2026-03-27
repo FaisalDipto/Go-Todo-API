@@ -24,7 +24,7 @@ func main() {
 	
 	dbPool, err := database.Connect(dbUrl)
 	if err != nil {
-		log.Fatal("Could not connect to database:", err)
+		log.Fatal("Error occured while connecting to database:", err)
 	}
 	defer dbPool.Close()
 
