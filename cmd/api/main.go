@@ -16,7 +16,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("No .env file found, using system default variables")
+		log.Println("Error finding .env file, using system default variables")
 	}
 
 	dbUrl := os.Getenv("DB_URL")
