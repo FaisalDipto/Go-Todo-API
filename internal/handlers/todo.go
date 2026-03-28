@@ -7,13 +7,17 @@ import (
 	"net/http"
 	"strconv"
 	"todo-api/internal/models"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type TodoHandler struct {
 	Pool *pgxpool.Pool
 	Logger *log.Logger
+	JWTSecret string
 }
 
 func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request) {
@@ -114,4 +118,50 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func (h *TodoHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var creds models.User
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// 1. Find the user in the database by their username
+	var storedUser models.User
+	query := "SELECT id, password_hash FROM users WHERE username = $1"
+	err := h.Pool.QueryRow(context.Background(), query, creds.Username).Scan(&storedUser.ID, &storedUser.PasswordHash)
+	if err != nil {
+		// If the user doesn't exist, we send a generic "Unauthorized"
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		return
+	}
+
+	// 2. Compare the typed password with the hashed password
+	err = bcrypt.CompareHashAndPassword([]byte(storedUser.PasswordHash), []byte(creds.Password))
+	if err != nil {
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		return
+	}
+
+	// 3. The password is correct! Let's build the JWT Passport.
+	// We store the User's ID and an Expiration Time (e.g., 24 hours from now)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": storedUser.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	// 4. "Sign" the passport using our secret key
+	tokenString, err := token.SignedString([]byte(h.JWTSecret))
+	if err != nil {
+		h.Logger.Printf("JWT ERROR: %v", err)
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+	// 5. Give the token to the user!
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token": tokenString,
+	})
 }

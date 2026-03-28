@@ -21,6 +21,11 @@ func main() {
 
 	dbUrl := os.Getenv("DB_URL")
 	port := os.Getenv("PORT")
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET is missing from .env file")
+	}
 	
 	dbPool, err := database.Connect(dbUrl)
 	if err != nil {
@@ -33,12 +38,20 @@ func main() {
 	h := &handlers.TodoHandler{
 		Pool: dbPool,
 		Logger: logger,
+		JWTSecret: jwtSecret,
 	}
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/todos", h.HandleTodos)
-	mux.HandleFunc("/todos/", h.HandleTodosById)
+	authMiddleware := middleware.Auth(jwtSecret)
+
+	protectedTodos := authMiddleware(http.HandlerFunc(h.HandleTodos))
+	protectedTodoByID := authMiddleware(http.HandlerFunc(h.HandleTodosById))
+
+	mux.Handle("/todos", protectedTodos)
+	mux.Handle("/todos/", protectedTodoByID)
+	mux.HandleFunc("/signup", h.Signup)
+	mux.HandleFunc("/login", h.Login)
 
 	handler := middleware.Logging(logger)(mux)
 	handler = middleware.Recovery(logger)(handler)
