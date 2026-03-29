@@ -20,19 +20,26 @@ type TodoHandler struct {
 	JWTSecret string
 }
 
-func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request) {
+func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 	idString := r.URL.Path[len("/todos/"):]
-	id , err := strconv.Atoi(idString)
-	if err != nil {
+	id, err := strconv.Atoi(idString)
+	if err != nil{
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		h.Logger.Println("Critical Error: user_id not found in context")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	switch r.Method{
 	case http.MethodGet:
-		query := "SELECT id, title, status FROM todos WHERE id = $1"
 		var t models.Todo
-		err := h.Pool.QueryRow(context.Background(), query, id).Scan(&t.Id, &t.Title, &t.Status)
+		query := "SELECT id, title, status FROM todos WHERE id = $1 AND user_id = $2"
+		err := h.Pool.QueryRow(context.Background(),query, id, userID).Scan(&t.Id, &t.Title, &t.Status)
 		if err != nil {
 			http.Error(w, "Todo not found", 404)
 			return
@@ -40,29 +47,37 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(t)
 
 	case http.MethodDelete:
-		query := "DELETE FROM todos WHERE id = $1"
-		res, _ := h.Pool.Exec(context.Background(), query, id)
-		if res.RowsAffected() == 0 {
+		query := "DELETE FROM todos WHERE id = $1 AND user_id = $2"
+		res, _ := h.Pool.Exec(context.Background(), query, id, userID)
+
+		if res.RowsAffected() == 0{
 			http.Error(w, "Todo not found.", 404)
 			return
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusNoContent)
 
 	case http.MethodPut:
+		query := "UPDATE todos SET status = $1 WHERE id = $2 AND user_id = $3"
 		var updateData struct{
-			Status bool `json:"status"`
+			Status bool		`json:"status"`
 		}
-		query := "UPDATE todos SET status = $1 WHERE id = $2"
+
 		json.NewDecoder(r.Body).Decode(&updateData)
-		h.Pool.Exec(context.Background(), query, updateData.Status, id)
+		h.Pool.Exec(context.Background(), query, updateData.Status, id, userID)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
 func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		h.Logger.Println("Critical Error: user_id not found in context")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
-		rows, err := h.Pool.Query(context.Background(), "SELECT id, title, status FROM todos")
+		rows, err := h.Pool.Query(context.Background(), "SELECT id, title, status FROM todos WHERE user_id = $1", userID)
 		if err != nil {
 		h.Logger.Printf("DATABASE ERROR: %v", err)
 		http.Error(w, "Internal Server Error", 500)
@@ -91,7 +106,6 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var newTodo models.Todo
-
 		if err := json.NewDecoder(r.Body).Decode(&newTodo); err != nil {
 			http.Error(w, "Invalid input", http.StatusBadRequest)
 			return
@@ -102,14 +116,13 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query := "INSERT INTO todos (title) VALUES ($1) RETURNING id"
-		err := h.Pool.QueryRow(context.Background(), query, newTodo.Title).Scan(&newTodo.Id)
+		query := "INSERT INTO todos (title, user_id) VALUES ($1, $2) RETURNING id"
+		err := h.Pool.QueryRow(context.Background(), query, newTodo.Title, userID).Scan(&newTodo.Id)
 		if err != nil {
 			h.Logger.Printf("POST ERROR: %v", err)
 			http.Error(w, "Internal Server Error", 500)
 			return
 		}
-
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
