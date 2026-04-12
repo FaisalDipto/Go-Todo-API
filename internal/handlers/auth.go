@@ -16,6 +16,20 @@ func (h *TodoHandler) Signup(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	if err := h.Validator.Struct(u); err != nil {
+		// 1. Format the errors
+			formattedErrors := formatValidationErrors(err)
+
+			// 2. Send back a clean JSON response
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error":  "Validation failed",
+				"details": formattedErrors,
+			})
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password),bcrypt.DefaultCost)
 
 	if err != nil {

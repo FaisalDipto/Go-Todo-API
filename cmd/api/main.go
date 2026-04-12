@@ -10,6 +10,7 @@ import (
 	"todo-api/internal/handlers"
 	"todo-api/internal/middleware"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
 
@@ -35,10 +36,13 @@ func main() {
 
 	logger := log.New(os.Stdout, "[TODO-API] ", log.LstdFlags)
 
+	v := validator.New()
+
 	h := &handlers.TodoHandler{
 		Pool: dbPool,
 		Logger: logger,
 		JWTSecret: jwtSecret,
+		Validator: v,
 	}
 
 	mux := http.NewServeMux()

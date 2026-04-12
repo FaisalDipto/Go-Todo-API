@@ -6,11 +6,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"todo-api/internal/models"
+	"strings"
 	"time"
+	"todo-api/internal/models"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,6 +20,7 @@ type TodoHandler struct {
 	Pool *pgxpool.Pool
 	Logger *log.Logger
 	JWTSecret string
+	Validator *validator.Validate
 }
 
 func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
@@ -111,8 +114,15 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if newTodo.Title == "" {
-			http.Error(w, "Title is required", http.StatusBadRequest)
+		if err := h.Validator.Struct(newTodo); err != nil {
+			formattedErrors := formatValidationErrors(err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "validation failed",
+				"details": formattedErrors,
+			})
 			return
 		}
 
@@ -177,4 +187,27 @@ func (h *TodoHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"token": tokenString,
 	})
+}
+
+func formatValidationErrors(err error) map[string]string {
+	errors := make(map[string]string)
+
+	if vErrors, ok := err.(validator.ValidationErrors); ok {
+		for _, e := range vErrors {
+			field := strings.ToLower(e.Field())
+			switch e.Tag() {
+			case "required":
+				errors[field] = "this field is required"
+			case "min":
+				errors[field]	= "too short"
+			case "max":
+				errors[field] = "too long"
+			case "alphanum":
+				errors[field] = "must contain only letters and numbers"
+			default:
+				errors[field] = "invalid value"
+			}
+		}
+	}
+	return errors
 }
