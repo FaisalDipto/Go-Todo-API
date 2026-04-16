@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    # NEW: The Healthcheck (The database checks its own pulse)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d todo_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "9090:9090"
+    # NEW: Don't just start after 'db', wait until 'db' is HEALTHY
+    depends_on:
+      db:
+        condition: service_healthy
+    # NEW: If the API crashes for any reason, Docker will bring it back to life
+    restart: on-failure
+    environment:
+      DB_URL: postgres://user:password@db:5432/todo_db?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 9090
+
+volumes:
+  postgres_data:

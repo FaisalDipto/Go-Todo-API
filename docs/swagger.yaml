@@ -1,0 +1,234 @@
+basePath: /
+definitions:
+  models.Todo:
+    properties:
+      id:
+        type: integer
+      status:
+        type: boolean
+      title:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - title
+    type: object
+  models.User:
+    properties:
+      id:
+        type: integer
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:9090
+info:
+  contact: {}
+  description: This is a professional Todo list server.
+  title: Todo API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Authenticate a user
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User Credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /todos:
+    get:
+      consumes:
+      - application/json
+      description: Get all todos for the current user or create a new todo
+      parameters:
+      - description: Todo object (for POST only)
+        in: body
+        name: todo
+        schema:
+          $ref: '#/definitions/models.Todo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Todo'
+            type: array
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Todo'
+      security:
+      - BearerAuth: []
+      summary: List or create todos
+      tags:
+      - todos
+    post:
+      consumes:
+      - application/json
+      description: Get all todos for the current user or create a new todo
+      parameters:
+      - description: Todo object (for POST only)
+        in: body
+        name: todo
+        schema:
+          $ref: '#/definitions/models.Todo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Todo'
+            type: array
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Todo'
+      security:
+      - BearerAuth: []
+      summary: List or create todos
+      tags:
+      - todos
+  /todos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Fetch, update status, or remove a specific todo by ID
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Update status (for PUT only) { ''status'': true }'
+        in: body
+        name: status
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Todo'
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Get, Update or Delete a todo
+      tags:
+      - todos
+    get:
+      consumes:
+      - application/json
+      description: Fetch, update status, or remove a specific todo by ID
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Update status (for PUT only) { ''status'': true }'
+        in: body
+        name: status
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Todo'
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Get, Update or Delete a todo
+      tags:
+      - todos
+    put:
+      consumes:
+      - application/json
+      description: Fetch, update status, or remove a specific todo by ID
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Update status (for PUT only) { ''status'': true }'
+        in: body
+        name: status
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Todo'
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Get, Update or Delete a todo
+      tags:
+      - todos
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

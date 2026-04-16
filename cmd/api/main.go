@@ -12,8 +12,19 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+
+	_ "todo-api/docs" // This is vital!
+  httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title Todo API
+// @version 1.0
+// @description This is a professional Todo list server.
+// @host localhost:9090
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -54,6 +65,7 @@ func main() {
 
 	mux.Handle("/todos", protectedTodos)
 	mux.Handle("/todos/", protectedTodoByID)
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 	mux.HandleFunc("/signup", h.Signup)
 	mux.HandleFunc("/login", h.Login)
 

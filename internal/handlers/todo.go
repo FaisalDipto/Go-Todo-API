@@ -31,6 +31,20 @@ type TodoHandler struct {
 	Validator *validator.Validate
 }
 
+// HandleTodosById godoc
+// @Summary Get, Update or Delete a todo
+// @Description Fetch, update status, or remove a specific todo by ID
+// @Tags todos
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Todo ID"
+// @Param status body object false "Update status (for PUT only) { 'status': true }"
+// @Security BearerAuth
+// @Success 200 {object} models.Todo
+// @Success 204 "No Content"
+// @Router /todos/{id} [get]
+// @Router /todos/{id} [put]
+// @Router /todos/{id} [delete]
 func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 	idString := r.URL.Path[len("/todos/"):]
 	id, err := strconv.Atoi(idString)
@@ -79,6 +93,18 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+// HandleTodos godoc
+// @Summary List or create todos
+// @Description Get all todos for the current user or create a new todo
+// @Tags todos
+// @Accept  json
+// @Produce  json
+// @Param todo body models.Todo false "Todo object (for POST only)"
+// @Security BearerAuth
+// @Success 200 {array} models.Todo
+// @Success 201 {object} models.Todo
+// @Router /todos [get]
+// @Router /todos [post]
 func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(int)
 	if !ok {
@@ -151,6 +177,14 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Login godoc
+// @Summary Authenticate a user
+// @Tags auth
+// @Accept  json
+// @Produce  json
+// @Param credentials body models.User true "Login Credentials"
+// @Success 200 {object} map[string]string
+// @Router /login [post]
 func (h *TodoHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var creds models.User
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {

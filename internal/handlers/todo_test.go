@@ -25,7 +25,7 @@ func (m *MockDB) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, 
 	if m.ShouldFail {
 		return nil, fmt.Errorf("database connection lost")
 	}
-	return nil, nil 
+	return nil, nil
 }
 
 // We just need these to satisfy the interface for now
