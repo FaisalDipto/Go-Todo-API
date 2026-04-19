@@ -113,6 +113,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Todo"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by 'id', 'title', or 'status'",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order 'ASC' or 'DESC'",
+                        "name": "order",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -158,6 +182,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Todo"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by 'id', 'title', or 'status'",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order 'ASC' or 'DESC'",
+                        "name": "order",
+                        "in": "query"
                     }
                 ],
                 "responses": {

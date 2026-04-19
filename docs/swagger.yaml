@@ -92,6 +92,22 @@ paths:
         name: todo
         schema:
           $ref: '#/definitions/models.Todo'
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Sort by 'id', 'title', or 'status'
+        in: query
+        name: sort
+        type: string
+      - description: Order 'ASC' or 'DESC'
+        in: query
+        name: order
+        type: string
       produces:
       - application/json
       responses:
@@ -120,6 +136,22 @@ paths:
         name: todo
         schema:
           $ref: '#/definitions/models.Todo'
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Sort by 'id', 'title', or 'status'
+        in: query
+        name: sort
+        type: string
+      - description: Order 'ASC' or 'DESC'
+        in: query
+        name: order
+        type: string
       produces:
       - application/json
       responses:

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
 	// "github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -100,6 +102,10 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 // @Accept  json
 // @Produce  json
 // @Param todo body models.Todo false "Todo object (for POST only)"
+// @Param page query int false "Page number (default 1)"
+// @Param limit query int false "Items per page (default 10)"
+// @Param sort query string false "Sort by 'id', 'title', or 'status'"
+// @Param order query string false "Order 'ASC' or 'DESC'"
 // @Security BearerAuth
 // @Success 200 {array} models.Todo
 // @Success 201 {object} models.Todo
@@ -114,7 +120,38 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		rows, err := h.Pool.Query(context.Background(), "SELECT id, title, status FROM todos WHERE user_id = $1", userID)
+		page := 1
+		limit := 10
+		sort := "id"
+		order := "ASC"
+
+		queryValues := r.URL.Query()
+
+		if p := queryValues.Get("page"); p != "" {
+			if val, err := strconv.Atoi(p); err == nil && val > 0{
+				page = val
+			}
+		}
+
+		if l := queryValues.Get("limit"); l != "" {
+			if val, err := strconv.Atoi(l); err == nil && val > 0 && val < 50 {
+				limit = val
+			}
+		}
+
+		if s := queryValues.Get("sort"); s == "title" || s == "status" {
+			sort = s
+		}
+
+		if o := queryValues.Get("order"); o == "DESC" {
+			order = o
+		}
+
+		offset := (page - 1) * limit
+
+		query := fmt.Sprintf("SELECT id, title, status FROM todos WHERE user_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3", sort, order,)
+
+		rows, err := h.Pool.Query(r.Context(),query, userID, limit, offset)
 		if err != nil {
 		h.Logger.Printf("DATABASE ERROR: %v", err)
 		http.Error(w, "Internal Server Error", 500)
@@ -161,7 +198,7 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 		}
 
 		query := "INSERT INTO todos (title, user_id) VALUES ($1, $2) RETURNING id"
-		err := h.Pool.QueryRow(context.Background(), query, newTodo.Title, userID).Scan(&newTodo.Id)
+		err := h.Pool.QueryRow(r.Context(), query, newTodo.Title, userID).Scan(&newTodo.Id)
 		if err != nil {
 			h.Logger.Printf("POST ERROR: %v", err)
 			http.Error(w, "Internal Server Error", 500)
