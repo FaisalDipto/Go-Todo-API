@@ -106,6 +106,8 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 // @Param limit query int false "Items per page (default 10)"
 // @Param sort query string false "Sort by 'id', 'title', or 'status'"
 // @Param order query string false "Order 'ASC' or 'DESC'"
+// @Param search query string false "Search tasks by title"
+// @Param status query bool false "Filter by status (true/false)"
 // @Security BearerAuth
 // @Success 200 {array} models.Todo
 // @Success 201 {object} models.Todo
@@ -147,11 +149,34 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 			order = o
 		}
 
+		search := queryValues.Get("search")
+		statusFilter := queryValues.Get("status")
+
+		query := "SELECT id, title, status FROM todos WHERE user_id = $1"
+		args := []interface{}{userID}
+		placeholderCount := 2
+
+		if search != "" {
+			query += fmt.Sprintf(" AND title ILIKE $%d", placeholderCount)
+			args = append(args, "%"+search+"%")
+			placeholderCount++
+		}
+
+		if statusFilter != "" {
+			isCompleted, err := strconv.ParseBool(statusFilter)
+			if err == nil {
+				query += fmt.Sprintf(" AND status = $%d", placeholderCount)
+				args = append(args, isCompleted)
+				placeholderCount++
+			}
+		}
+		
 		offset := (page - 1) * limit
 
-		query := fmt.Sprintf("SELECT id, title, status FROM todos WHERE user_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3", sort, order,)
+		query += fmt.Sprintf(" ORDER BY %s %s LIMIT $%d OFFSET $%d", sort, order, placeholderCount, placeholderCount+1)
+		args = append(args, limit, offset)
 
-		rows, err := h.Pool.Query(r.Context(),query, userID, limit, offset)
+		rows, err := h.Pool.Query(r.Context(),query, args...)
 		if err != nil {
 		h.Logger.Printf("DATABASE ERROR: %v", err)
 		http.Error(w, "Internal Server Error", 500)

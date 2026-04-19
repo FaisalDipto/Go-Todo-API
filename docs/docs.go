@@ -137,6 +137,18 @@ const docTemplate = `{
                         "description": "Order 'ASC' or 'DESC'",
                         "name": "order",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search tasks by title",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by status (true/false)",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -205,6 +217,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Order 'ASC' or 'DESC'",
                         "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search tasks by title",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by status (true/false)",
+                        "name": "status",
                         "in": "query"
                     }
                 ],

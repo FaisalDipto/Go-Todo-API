@@ -108,6 +108,14 @@ paths:
         in: query
         name: order
         type: string
+      - description: Search tasks by title
+        in: query
+        name: search
+        type: string
+      - description: Filter by status (true/false)
+        in: query
+        name: status
+        type: boolean
       produces:
       - application/json
       responses:
@@ -152,6 +160,14 @@ paths:
         in: query
         name: order
         type: string
+      - description: Search tasks by title
+        in: query
+        name: search
+        type: string
+      - description: Filter by status (true/false)
+        in: query
+        name: status
+        type: boolean
       produces:
       - application/json
       responses:
