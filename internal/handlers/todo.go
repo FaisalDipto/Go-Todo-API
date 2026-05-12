@@ -65,8 +65,8 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 	switch r.Method{
 	case http.MethodGet:
 		var t models.Todo
-		query := "SELECT id, title, status FROM todos WHERE id = $1 AND user_id = $2"
-		err := h.Pool.QueryRow(context.Background(),query, id, userID).Scan(&t.Id, &t.Title, &t.Status)
+		query := "SELECT id, title, status FROM todos WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL"
+		err := h.Pool.QueryRow(r.Context(),query, id, userID).Scan(&t.Id, &t.Title, &t.Status)
 		if err != nil {
 			http.Error(w, "Todo not found", 404)
 			return
@@ -74,8 +74,8 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 		json.NewEncoder(w).Encode(t)
 
 	case http.MethodDelete:
-		query := "DELETE FROM todos WHERE id = $1 AND user_id = $2"
-		res, _ := h.Pool.Exec(context.Background(), query, id, userID)
+		query := "UPDATE todos SET deleted_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL"
+		res, _ := h.Pool.Exec(r.Context(), query, id, userID)
 
 		if res.RowsAffected() == 0{
 			http.Error(w, "Todo not found.", 404)
@@ -84,13 +84,17 @@ func (h *TodoHandler) HandleTodosById(w http.ResponseWriter, r *http.Request){
 		w.WriteHeader(http.StatusNoContent)
 
 	case http.MethodPut:
-		query := "UPDATE todos SET status = $1 WHERE id = $2 AND user_id = $3"
+		query := "UPDATE todos SET status = $1 WHERE id = $2 AND user_id = $3 AND deleted_at IS NULL"
 		var updateData struct{
 			Status bool		`json:"status"`
 		}
 
 		json.NewDecoder(r.Body).Decode(&updateData)
-		h.Pool.Exec(context.Background(), query, updateData.Status, id, userID)
+		res, _ := h.Pool.Exec(r.Context(), query, updateData.Status, id, userID)
+		if res.RowsAffected() == 0{
+			http.Error(w, "Todo not found.", 404)
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -152,7 +156,7 @@ func (h *TodoHandler) HandleTodos(w http.ResponseWriter, r *http.Request) {
 		search := queryValues.Get("search")
 		statusFilter := queryValues.Get("status")
 
-		query := "SELECT id, title, status FROM todos WHERE user_id = $1"
+		query := "SELECT id, title, status FROM todos WHERE user_id = $1 AND deleted_at IS NULL"
 		args := []interface{}{userID}
 		placeholderCount := 2
 
@@ -314,4 +318,63 @@ func formatValidationErrors(err error) map[string]string {
 		}
 	}
 	return errors
+}
+
+func (h *TodoHandler) HandleTrash (w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := "SELECT id, title, status, deleted_at FROM todos WHERE user_id = $1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC"
+
+	rows, err := h.Pool.Query(r.Context(), query, userId)
+	if err != nil {
+		h.Logger.Printf("TRASH ERROR: %v\n", err)
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+	defer	rows.Close()
+
+	todos := []models.Todo{}
+	for rows.Next() {
+		var	t models.Todo
+		if err := rows.Scan(&t.Id, &t.Title, &t.Status, &t.DeletedAt); err != nil {
+			continue
+		}
+		todos = append(todos, t)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(todos)
+}
+
+func (h *TodoHandler) RestoreTrash (w http.ResponseWriter, r *http.Request) {
+	idString := strings.TrimPrefix(r.URL.Path, "/todos/restore/")
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := "UPDATE todos SET deleted_at = NULL WHERE id = $1 AND user_id = $2 AND deleted_at IS NOT NULL"
+
+	rows, err := h.Pool.Exec(r.Context(), query, id, userId)
+	if err != nil {
+		h.Logger.Printf("Restore ERROR: %v\n", err)
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+
+	if rows.RowsAffected() == 0 {
+		http.Error(w, "Todo not found", 404)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

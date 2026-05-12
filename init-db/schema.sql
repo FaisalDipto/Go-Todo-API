@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS todos (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     status BOOLEAN DEFAULT false,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
 );
