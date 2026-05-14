@@ -25,7 +25,6 @@ import (
 // @title Todo API
 // @version 1.0
 // @description This is a professional Todo list server.
-// @host localhost:9090
 // @BasePath /
 // @securityDefinitions.apikey BearerAuth
 // @in header
