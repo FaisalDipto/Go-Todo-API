@@ -1,0 +1,33 @@
+name: Go API CI Pipeline
+
+# Phase A: The Trigger
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Phase B: The Environment
+jobs:
+  test-and-build:
+  name: Run Tests & build
+  runs-on: ubuntu-latest
+
+  # Phase C: The Steps
+  steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
+
+  - name: Set up Go
+    uses: actions/setup-go@v5
+    with:
+      go-version: '1.26.1'
+
+  - name: Download Dependencies
+    run: go mod download
+
+  - name: Run Unit & Integration Tests
+    run: go test -v ./...
+
+  - name: Verify build
+    run: go build -o api ./cmd/api/main.go
