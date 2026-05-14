@@ -6,7 +6,6 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:9090",
     "basePath": "/",
     "paths": {
         "/login": {
@@ -393,6 +392,9 @@
                 "title"
             ],
             "properties": {
+                "deleted_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },

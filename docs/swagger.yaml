@@ -2,6 +2,8 @@ basePath: /
 definitions:
   models.Todo:
     properties:
+      deleted_at:
+        type: string
       id:
         type: integer
       status:
@@ -28,7 +30,6 @@ definitions:
     - password
     - username
     type: object
-host: localhost:9090
 info:
   contact: {}
   description: This is a professional Todo list server.
