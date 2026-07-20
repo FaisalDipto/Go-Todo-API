@@ -91,12 +91,13 @@ Once the server is running, you can interact with the API via the automated Swag
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/register` | Register a new user | No |
-| `POST` | `/api/login` | Authenticate and receive JWT | No |
-| `GET` | `/api/todos` | Retrieve all user tasks | Yes |
-| `POST` | `/api/todos` | Create a new task | Yes |
-| `PUT` | `/api/todos/:id` | Update an existing task | Yes |
-| `DELETE`| `/api/todos/:id` | Remove a task | Yes |
+| `POST` | `/signup` | Register a new user | No |
+| `POST` | `/login` | Authenticate and receive JWT | No |
+| `GET` | `/todos` | Retrieve all user tasks | Yes |
+| `POST` | `/todos` | Create a new task | Yes |
+| `GET` | `/todos/{id}` | Get a todo | Yes |
+| `PUT` | `/todos/{id}` | Update an existing task | Yes |
+| `DELETE`| `/todos/{id}` | Remove a task | Yes |
 
 ## 🧪 Testing
 
