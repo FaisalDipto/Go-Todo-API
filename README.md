@@ -85,7 +85,7 @@ todo-api/
 ## 📖 API Documentation (Swagger)
 
 Once the server is running, you can interact with the API via the automated Swagger UI.
-* **Endpoint:** `http://localhost:<YOUR_PORT>/swagger/index.html`
+* **Endpoint:** `https://yale-replacing-ranch-desire.trycloudflare.com/swagger/index.html#/`
 
 ### Core Endpoints
 
